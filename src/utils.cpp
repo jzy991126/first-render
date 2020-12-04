@@ -64,3 +64,23 @@ Eigen::Vector3f random_in_hemisphere(const Eigen::Vector3f &normal) {
 Eigen::Vector3f reflect(const Eigen::Vector3f &v, const Eigen::Vector3f &n) {
     return v - 2*v.dot(n)*n;
 }
+
+Eigen::Vector3f refract(const Eigen::Vector3f &uv, const Eigen::Vector3f &n, double etai_over_etat) {
+    auto cos_theta = fmin((-uv).dot(n), 1.0);
+    Eigen::Vector3f r_out_perp =  etai_over_etat * (uv + cos_theta*n);
+    Eigen::Vector3f r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.squaredNorm())) * n;
+    return r_out_perp + r_out_parallel;
+}
+
+double degree2radians(double deg) {
+    return deg * pi / 180.0;
+}
+
+
+Eigen::Vector3f random_in_unit_disk() {
+    while (true) {
+        auto p = Eigen::Vector3f(random_float(-1,1), random_float(-1,1), 0);
+        if (p.squaredNorm() >= 1) continue;
+        return p;
+    }
+}

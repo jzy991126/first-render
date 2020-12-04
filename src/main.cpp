@@ -51,6 +51,12 @@ int main()
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int sample_per_pixel = 500;
 
+    Eigen::Vector3f lookfrom(0,0,4);
+    Eigen::Vector3f lookat(0,0,2);
+    vec3 vup(0,1,0);
+    auto dist_to_focus = (lookfrom-lookat).squaredNorm();
+    auto aperture = 0.1;
+
     bounce = 0;
 
 
@@ -60,14 +66,15 @@ int main()
 
 
 
-    Camera camera(aspect_ratio, 2.0f, 1.0f, Eigen::Vector3f(0.0f,0.0f,3.0f));
+    Camera camera(lookfrom, lookat, vup, 50, aspect_ratio, aperture, dist_to_focus);
 	Scene scene;
 
     Model ball_model(path);
     auto material_diffuse = make_shared<Lambertian>(Eigen::Vector3f(0.8f,.8f,.0f));
-    auto metal_diffuse = make_shared<Metal>(Eigen::Vector3f(1.0f,1.0f,1.0f),0.5);
+    auto material_metal = make_shared<Metal>(Eigen::Vector3f(1.0f,1.0f,1.0f),0.5);
+    auto meterial_dielectric = make_shared<Dielectric>(1.5);
 
-    Object ball1(ball_model,metal_diffuse),ball2(ball_model,material_diffuse),ball3(ball_model,metal_diffuse);
+    Object ball1(ball_model,material_metal),ball2(ball_model,material_diffuse),ball3(ball_model,meterial_dielectric);
     Object plane2(ball_model,material_diffuse);
 
     plane2.pan(Eigen::Vector3f(0.0f,2.0f,0.0f));

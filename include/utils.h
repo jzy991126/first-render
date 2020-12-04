@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <random>
 #include <Eigen/Dense>
-
+const double pi = 3.1415926535897932385;
 
 float clamp(const float& lo, const float& hi, const float& v);
 
@@ -25,9 +25,8 @@ Eigen::Vector3f random_in_hemisphere(const Eigen::Vector3f& normal);
 
 Eigen::Vector3f reflect(const Eigen::Vector3f& v,const Eigen::Vector3f& n);
 
-Eigen::Vector3f refract(const Eigen::Vector3f& uv, const Eigen::Vector3f& n, double etai_over_etat) {
-    auto cos_theta = fmin((-uv).dot(n), 1.0);
-    Eigen::Vector3f r_out_perp =  etai_over_etat * (uv + cos_theta*n);
-    Eigen::Vector3f r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.squaredNorm())) * n;
-    return r_out_perp + r_out_parallel;
-}
+Eigen::Vector3f refract(const Eigen::Vector3f &uv, const Eigen::Vector3f &n, double etai_over_etat);
+
+double degree2radians(double deg);
+
+Eigen::Vector3f random_in_unit_disk();

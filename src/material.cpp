@@ -30,3 +30,17 @@ bool Metal::scatter(const Ray &r_in, const Eigen::Vector3f &normal, const Eigen:
     attenuation = albedo;
     return scattered.dir.dot(normal)>0.0f;
 }
+
+bool Dielectric::scatter(const Ray &r_in, const Eigen::Vector3f &normal, const Eigen::Vector3f &point, Ray &scattered,
+                         Eigen::Vector3f &attenuation) const {
+    attenuation = Eigen::Vector3f(1.f,1.f,1.f);
+
+
+    double refraction_ratio = r_in.dir.dot(normal)>=0.0? 1.0/ir:ir;
+
+    auto unit_direction = r_in.dir.normalized();
+    auto refracted = refract(unit_direction,normal,refraction_ratio);
+
+    scattered = Ray(point,r_in.dir);
+    return true;
+}

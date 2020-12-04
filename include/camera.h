@@ -1,13 +1,15 @@
 #pragma once
 #include<Eigen/Dense>
 #include"scene.h"
+using vec3 = Eigen::Vector3f;
 
 class Camera {
 private:
-	float viewport_height, viewport_width,aspect_ratio;
-	Eigen::Vector3f orig, horizontal, vertical, lower_left_corner;
+    vec3 orig,lower_left_corner,horizontal,vertical;
+    vec3 u,v,w;
+    double lens_radius;
 
 public:
-	Camera(float _aspect_ratio, float _viewport_height,float _focal_length, Eigen::Vector3f _orig);
+	Camera(const vec3& lookfrom,const vec3& lookat,const vec3& vup,double vfov,double aspect_ratio,double aperture,double focus_dist);
 	Ray getRay(float u, float v);
 };

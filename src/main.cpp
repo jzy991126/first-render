@@ -30,13 +30,14 @@ Eigen::Vector3f CastRay(const Ray& ray, const Scene& scene)
     if(hit.isHit){
         Ray scattered;
         Eigen::Vector3f attenuation;
+        auto emited = hit.material->emitted(hit.u,hit.v,hit.point);
         if(hit.material->scatter(ray,hit.normal,hit.point,scattered,attenuation))
         {
-            return attenuation.cwiseProduct(CastRay(scattered,scene));
+            return emited+attenuation.cwiseProduct(CastRay(scattered,scene));
         }
-        return {0.0f,0.0f,0.0f};
+        return emited;
     }
-
+    return {.2,.2,.2};
     auto unit_direction = ray.dir.normalized();
     auto t = 0.5*(unit_direction.y() + 1.0);
     return (1.0-t)*Eigen::Vector3f(1.0, 1.0, 1.0) + t*Eigen::Vector3f(0.5, 0.7, 1.0);
@@ -49,11 +50,11 @@ int main()
     const float aspect_ratio = 16.0 / 9.0;
     const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int sample_per_pixel = 500;
+    const int sample_per_pixel = 1000;
 
-    Eigen::Vector3f lookfrom(0,0,4);
-    Eigen::Vector3f lookat(0,0,2);
-    vec3 vup(0,1,0);
+    Eigen::Vector3f lookfrom(0,30,0);
+    Eigen::Vector3f lookat(0,10,0);
+    vec3 vup(0,-1,0);
     auto dist_to_focus = (lookfrom-lookat).squaredNorm();
     auto aperture = 0.1;
 
@@ -61,7 +62,8 @@ int main()
 
 
     PPM ppm("test", image_width, image_height);
-	string path("C:/Users/jzy99/Desktop/ball.fbx");
+	string dragon_path("C:/Users/jzy99/Desktop/fbx/Dragon 2.5_fbx.fbx");
+	string ball_path("C:/Users/jzy99/Desktop/ball.fbx");
 
 
 
@@ -69,23 +71,25 @@ int main()
     Camera camera(lookfrom, lookat, vup, 50, aspect_ratio, aperture, dist_to_focus);
 	Scene scene;
 
-    Model ball_model(path);
+    Model dragen_model(dragon_path),ball_model(ball_path);
     auto material_diffuse = make_shared<Lambertian>(Eigen::Vector3f(0.8f,.8f,.0f));
     auto material_metal = make_shared<Metal>(Eigen::Vector3f(1.0f,1.0f,1.0f),0.5);
     auto meterial_dielectric = make_shared<Dielectric>(1.5);
+    auto material_light = make_shared<Diffuse_light>(Eigen::Vector3f(1,1,1));
 
-    Object ball1(ball_model,material_metal),ball2(ball_model,material_diffuse),ball3(ball_model,meterial_dielectric);
-    Object plane2(ball_model,material_diffuse);
+    Object dragon(dragen_model,material_metal),light(ball_model,material_light);
+    Object ball1(ball_model,material_metal);
 
-    plane2.pan(Eigen::Vector3f(0.0f,2.0f,0.0f));
-    plane2.scale(Eigen::Vector3f(5.0f,1.0f,1.0f));
-    plane2.update();
+//    light.scale(Eigen::Vector3f(50,50,50));
+//    light.pan(Eigen::Vector3f(.0f,0.f,100.f));
+//    light.update();
 
-    ball1.pan(Eigen::Vector3f(3.f,0.f,0.f));
+    light.scale(Eigen::Vector3f(10,10,10));
+
+    ball1.pan(Eigen::Vector3f(2,0,0));
     ball1.update();
-
-    ball2.pan(Eigen::Vector3f(-2.f,0.f,0.f));
-    ball2.update();
+//    ball3.rotate(1.57,Eigen::Vector3f::UnitX());
+//    ball3.update();
 
 //    ball.pan(Eigen::Vector3f(5.0f,5.0f,2.0f));
 //    ball.update();
@@ -102,10 +106,11 @@ int main()
 
 	ball.update();*/
 
-	scene.addObject(ball1);
-	scene.addObject(ball2);
-	scene.addObject(ball3);
-	scene.addObject(plane2);
+//	scene.addObject(dragon);
+//	scene.addObject(ball2);
+//    scene.addObject(ball1);
+	scene.addObject(light);
+//	scene.addObject(plane2);
 	scene.endAdd();
 
     auto start = std::chrono::system_clock::now();

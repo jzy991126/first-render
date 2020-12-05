@@ -6,6 +6,7 @@
 #include "object.h"
 #include "m_embree.h"
 #include <map>
+#include <unordered_map>
 
 
 #include "ray.h"
@@ -16,7 +17,7 @@ class Scene
 
 private:
 	std::vector<Object> objects;
-	std::map<unsigned int, Mesh> id2mesh;
+	std::unordered_map<unsigned int, Mesh> id2mesh;
 	
 
 public:

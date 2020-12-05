@@ -28,16 +28,19 @@ void Object::scale(const Eigen::Vector3f& vec)
 
 void Object::update()
 {
+    Eigen::Matrix3f trans2 = transform.matrix().transpose().inverse().topLeftCorner<3,3>();
 	for (auto & mesh : meshes)
 	{
 		for(auto & vertice : mesh.vertices)
         {
 //            vertice = transform.linear()*vertice;
             vertice = transform*vertice;
+
         }
-
-//            vertice =  transform.linear()*vertice;
-
+		for(auto & normal : mesh.normals)
+        {
+		    normal = (trans2*normal).normalized();
+        }
 	}
 }
 void Object::rotate(float theta, const Eigen::Vector3f& vec)

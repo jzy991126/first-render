@@ -11,6 +11,12 @@ public:
     virtual bool scatter(const Ray &r_in, const Eigen::Vector3f &normal, const Eigen::Vector3f &point, Ray &scattered,
                          Eigen::Vector3f &attenuation) const = 0;
 
+    virtual Eigen::Vector3f emitted(double u,double v,const Eigen::Vector3f& p)const{
+        return {0,0,0};
+    }
+
+    bool needOrigNorm=false;
+
 };
 
 class Lambertian : public Material {
@@ -41,9 +47,19 @@ class Dielectric : public Material {
 public:
     float ir;
 public:
-    Dielectric(double index_of_refraction) : ir(index_of_refraction) {}
+    Dielectric(double index_of_refraction);
 
     bool scatter(const Ray &r_in, const Eigen::Vector3f &normal, const Eigen::Vector3f &point, Ray &scattered,
                  Eigen::Vector3f &attenuation) const override;
 };
 
+class Diffuse_light: public Material
+{
+public:
+    Eigen::Vector3f color;
+public:
+    Diffuse_light(Eigen::Vector3f color);
+    bool scatter(const Ray &r_in, const Eigen::Vector3f &normal, const Eigen::Vector3f &point, Ray &scattered,
+                 Eigen::Vector3f &attenuation) const override;
+    Eigen::Vector3f emitted(double u,double v,const Eigen::Vector3f& p)const override;
+};

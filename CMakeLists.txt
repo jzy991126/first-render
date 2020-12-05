@@ -16,5 +16,7 @@ find_package(embree 3.0 REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 
-add_executable(testassimp ${SRC_LIST})
+add_executable(testassimp ${SRC_LIST} src/mesh.cpp)
 target_link_libraries(testassimp PRIVATE assimp::assimp Eigen3::Eigen embree OpenMP::OpenMP_CXX)
+
+

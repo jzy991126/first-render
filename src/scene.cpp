@@ -10,6 +10,7 @@ void Scene::addObject(const Object& obj)
 
 	for (auto & meshe : last_obj->meshes)
 	{
+//	    std::cout<<"add "<<meshe.vertices.size()<<std::endl;
 		unsigned int id = embree.addMesh(meshe.vertices, meshe.indices);
 		id2mesh[id] = meshe;
 	}
@@ -34,6 +35,11 @@ My_Hit Scene::castRay(const Ray& ray) const
 	unsigned int geoid = hit.hit.geomID;
 	unsigned int priid = hit.hit.primID;
 	result.material = id2mesh.at(geoid).material;
+
+	if(result.material->needOrigNorm)
+    {
+	    result.normal = id2mesh.at(geoid).getNorm(priid,hit.hit.u,hit.hit.v);
+    }
 
 //    auto mesh  = id2mesh.at(geoid);
 //	auto resa = mesh.getPoint(static_cast<int>(priid),hit.hit.u,hit.hit.v);

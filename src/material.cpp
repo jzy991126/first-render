@@ -6,6 +6,7 @@
 
 #include <utility>
 
+
 #include "utils.h"
 
 Lambertian::Lambertian(Eigen::Vector3f color) : albedo(std::move(color)) {}
@@ -33,14 +34,30 @@ bool Metal::scatter(const Ray &r_in, const Eigen::Vector3f &normal, const Eigen:
 
 bool Dielectric::scatter(const Ray &r_in, const Eigen::Vector3f &normal, const Eigen::Vector3f &point, Ray &scattered,
                          Eigen::Vector3f &attenuation) const {
+
+
     attenuation = Eigen::Vector3f(1.f,1.f,1.f);
+    auto front = r_in.dir.dot(normal)<=0.0;
 
-
-    double refraction_ratio = r_in.dir.dot(normal)>=0.0? 1.0/ir:ir;
+    double refraction_ratio = front? ir:1.0/ir;
 
     auto unit_direction = r_in.dir.normalized();
     auto refracted = refract(unit_direction,normal,refraction_ratio);
 
-    scattered = Ray(point,r_in.dir);
+    scattered = Ray(point,refracted);
     return true;
+}
+
+Dielectric::Dielectric(double index_of_refraction) : ir(index_of_refraction) {
+}
+
+Diffuse_light::Diffuse_light(Eigen::Vector3f color) :color(std::move(color)){}
+
+Eigen::Vector3f Diffuse_light::emitted(double u, double v, const Eigen::Vector3f &p) const {
+    return color;
+}
+
+bool Diffuse_light::scatter(const Ray &r_in, const Eigen::Vector3f &normal, const Eigen::Vector3f &point, Ray &scattered,
+             Eigen::Vector3f &attenuation) const{
+    return false;
 }

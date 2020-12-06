@@ -35,6 +35,8 @@ My_Hit Scene::castRay(const Ray& ray) const
 	unsigned int geoid = hit.hit.geomID;
 	unsigned int priid = hit.hit.primID;
 	result.material = id2mesh.at(geoid).material;
+	result.u = hit.hit.u;
+	result.v = hit.hit.v;
 
 	if(result.material->needOrigNorm)
     {

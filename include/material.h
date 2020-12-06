@@ -51,6 +51,9 @@ public:
 
     bool scatter(const Ray &r_in, const Eigen::Vector3f &normal, const Eigen::Vector3f &point, Ray &scattered,
                  Eigen::Vector3f &attenuation) const override;
+
+private:
+    static double reflectance(double cosine, double ref_idx);
 };
 
 class Diffuse_light: public Material

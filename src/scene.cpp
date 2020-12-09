@@ -8,12 +8,21 @@ void Scene::addObject(const Object& obj)
 	objects.push_back(obj);
 	auto last_obj = objects.end() - 1;
 
-	for (auto & meshe : last_obj->meshes)
+
+
+	for (auto & mesh : last_obj->meshes)
 	{
+        std::vector<Point3> temp;
+        for(auto & vertex : mesh.vertices)
+        {
+            temp.push_back(vertex.position);
+        }
 //	    std::cout<<"add "<<meshe.vertices.size()<<std::endl;
-		unsigned int id = embree.addMesh(meshe.vertices, meshe.indices);
-		id2mesh[id] = meshe;
+		unsigned int id = embree.addMesh(temp, mesh.indices);
+		id2mesh[id] = mesh;
+        id2object[id] = *last_obj;
 	}
+
 	
 }
 
@@ -22,26 +31,37 @@ void Scene::endAdd()
 	embree.endAdd();
 }
 
-My_Hit Scene::castRay(const Ray& ray) const
+My_Hit Scene::castRay(const Ray& ray,float tnear,float tfar) const
 {
 
 	My_Hit result;
-	RTCRayHit hit = embree.castRay(ray.orig, ray.dir);
+	RTCRayHit hit = embree.castRay(ray.orig, ray.dir,tnear,tfar);
 	result.isHit = !(hit.hit.geomID == RTC_INVALID_GEOMETRY_ID);
 
 	if (!result.isHit)
 		return result;
+
+
 	result.normal = Eigen::Vector3f(hit.hit.Ng_x, hit.hit.Ng_y, hit.hit.Ng_z).normalized();
 	unsigned int geoid = hit.hit.geomID;
 	unsigned int priid = hit.hit.primID;
+
+	result.texcoord = id2mesh.at(geoid).getTexcood(priid,hit.hit.u,hit.hit.v);
+
+
+//	if(mesh.hasTexture)
+//    {
+//	    result.texture = mesh.texture;
+//    }
+//	else{
+//
+//	}
+
+
 	result.material = id2mesh.at(geoid).material;
 	result.u = hit.hit.u;
 	result.v = hit.hit.v;
-
-	if(result.material->needOrigNorm)
-    {
-	    result.normal = id2mesh.at(geoid).getNorm(priid,hit.hit.u,hit.hit.v);
-    }
+	result.ray = ray;
 
 //    auto mesh  = id2mesh.at(geoid);
 //	auto resa = mesh.getPoint(static_cast<int>(priid),hit.hit.u,hit.hit.v);

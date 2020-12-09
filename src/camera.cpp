@@ -1,5 +1,5 @@
 #include "camera.h"
-#include "utils.h"
+
 
 Ray Camera::getRay(float s, float t)
 {

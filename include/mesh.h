@@ -5,26 +5,41 @@
 #pragma once
 
 
-
 #include <eigen3/Eigen/Dense>
 #include <memory>
 #include <vector>
 
 #include "material.h"
+#include "firstrender.h"
+
+
+class ImageTexture;
+
+struct Vertex {
+    Point3 position;
+    Vec3 normal;
+    Vec2 texcoord;
+
+    Vertex();
+
+};
 
 class Mesh {
 public:
-    std::vector<Eigen::Vector3f> vertices;
+    std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-    std::vector<Eigen::Vector3f> normals;
     std::shared_ptr<Material> material;
+    shared_ptr<ImageTexture> texture;
+    bool hasTexture;
 
 
 public:
-    Mesh(std::vector<Eigen::Vector3f> vertices, std::vector<uint32_t> indices, std::vector<Eigen::Vector3f> normals):
-            vertices(std::move(vertices)),indices(std::move(indices)),normals(std::move(normals)){}
-    Mesh()= default;
-    Eigen::Vector3f getNorm(unsigned int indice,float u,float v) const;
+    Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, bool hasTexture) :
+            vertices(std::move(vertices)), indices(std::move(indices)), hasTexture(hasTexture) {}
+
+    Vec2 getTexcood(unsigned int indice,float u,float v) const;
+
+    Mesh();
 };
 
 

@@ -79,7 +79,7 @@ void M_embree::endAdd()
 	rtcCommitScene(scene);
 }
 
-RTCRayHit M_embree::castRay(Eigen::Vector3f origin, Eigen::Vector3f dir)const
+RTCRayHit M_embree::castRay(Eigen::Vector3f origin, Eigen::Vector3f dir,float tnear,float tfar)const
 {
 	struct RTCIntersectContext context{};
 	rtcInitIntersectContext(&context);
@@ -96,8 +96,8 @@ RTCRayHit M_embree::castRay(Eigen::Vector3f origin, Eigen::Vector3f dir)const
 	rayhit.ray.dir_x = dir.x();
 	rayhit.ray.dir_y = dir.y();
 	rayhit.ray.dir_z = dir.z();
-	rayhit.ray.tnear = 1e-3;
-	rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+	rayhit.ray.tnear = tnear;
+	rayhit.ray.tfar = tfar;
 	rayhit.ray.mask = -1;
 	rayhit.ray.flags = 0;
 	rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;

@@ -1,6 +1,7 @@
 #pragma once
 #include<Eigen/Dense>
 #include"scene.h"
+#include "utils.h"
 using vec3 = Eigen::Vector3f;
 
 class Camera {

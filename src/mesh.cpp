@@ -3,13 +3,22 @@
 //
 #include "mesh.h"
 
-Eigen::Vector3f Mesh::getNorm(unsigned int indice,float u,float v) const {
+
+Vec2 Mesh::getTexcood(unsigned int indice,float u,float v) const {
 
 
     auto ind1 = indices[indice*3],ind2 = indices[indice*3+1],ind3 = indices[indice*3+2];
-    Eigen::Vector3f a = normals[ind1],b = normals[ind2],c = normals[ind3];
+    auto coord1 = vertices[ind1].texcoord,coord2 = vertices[ind2].texcoord,coord3 = vertices[ind3].texcoord;
+    return (1-u-v)*coord1+u*coord2+v*coord3;
+}
 
-//    float r = 1.0/3.0;
-//    return (r*(a+b+c)).normalized();
-    return (1-u-v)*a+u*b+v*c;
+Mesh::Mesh() {
+    material = nullptr;
+    hasTexture = false;
+}
+
+Vertex::Vertex() {
+    position = Point3 ::Zero();
+    normal = Vec3::Zero();
+    texcoord = Vec2::Zero();
 }

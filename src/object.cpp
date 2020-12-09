@@ -1,17 +1,41 @@
 #include "object.h"
 #include "utils.h"
+#include "material_factory.h"
 
 
-Object::Object(Model& model,const std::shared_ptr<Material>& material)
+Object::Object(Model& model,bool enableTexture,std::string material,shared_ptr<Texture> texture)
 {
 	transform = Eigen::Affine3f::Identity();
 	meshes = model.meshes;
-	for(auto & mesh : meshes)
+
+	this->enableTexture= enableTexture;
+	if(enableTexture)
     {
-	    mesh.material=material;
+        for(auto & mesh : meshes)
+        {
+            auto temp = MaterialFactory::get().produce_shared(material);
+            if(mesh.hasTexture)
+            {
+
+                temp->setAlbedo(mesh.texture);
+//                auto temp = std::make_shared<Material>(*material);
+            }
+            else{
+                temp->setAlbedo(texture);
+            }
+            mesh.material=temp;
+        }
     }
+	else{
+        auto temp = MaterialFactory::get().produce_shared(material);
+        temp->setAlbedo(texture);
+        for(auto & mesh : meshes)
+        {
+            mesh.material=temp;
+        }
+	}
 
-
+	enableTexture = false;
 }
 
 void Object::pan(const Eigen::Vector3f& vec)
@@ -34,17 +58,25 @@ void Object::update()
 		for(auto & vertice : mesh.vertices)
         {
 //            vertice = transform.linear()*vertice;
-            vertice = transform*vertice;
+            vertice.position = transform*vertice.position;
+            vertice.normal = (trans2*vertice.normal).normalized();
 
         }
-		for(auto & normal : mesh.normals)
-        {
-		    normal = (trans2*normal).normalized();
-        }
+
 	}
 }
 void Object::rotate(float theta, const Eigen::Vector3f& vec)
 {
 	Eigen::AngleAxisf trans(theta, vec);
 	transform.rotate(trans);
+}
+
+Object::Object(Model& model,shared_ptr<Material> material) {
+    transform = Eigen::Affine3f::Identity();
+    meshes = model.meshes;
+
+    for(auto & mesh : meshes)
+    {
+        mesh.material=material;
+    }
 }

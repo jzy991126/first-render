@@ -6,18 +6,28 @@
 
 #include <iostream>
 #include "utils.h"
+#include "onb.h"
+#include "pdf.h"
 
 
 
-bool Lambertian::scatter(const My_Hit& hit,Ray& scattered,Eigen::Vector3f& attenuation) const {
-    Eigen::Vector3f scatter_direction = hit.normal + random_unit_vector();
-    if(scatter_direction.isApprox(Eigen::Vector3f::Zero(),1e-8))
-        scatter_direction = hit.normal;
-
-    scattered = Ray(hit.point, scatter_direction);
-    attenuation = albedo->value(hit.texcoord.x(),hit.texcoord.y(),hit.point);
+bool Lambertian::scatter(const My_Hit& hit, Ray &scattered,
+                               ScatterRecord& srec) const {
+//    Eigen::Vector3f scatter_direction = hit.normal + random_unit_vector();
+////    if(scatter_direction.isApprox(Eigen::Vector3f::Zero(),1e-8))
+////        scatter_direction = hit.normal;
+    srec.is_specular = false;
+    srec.attenuation = albedo->value(hit.texcoord.x(),hit.texcoord.y(),hit.point);
+    srec.pdf_ptr = make_shared<Cosine_pdf>(hit.normal);
     return true;
 
+
+}
+
+double Lambertian::scattering_pdf(const My_Hit& hit,const Ray& scttered)const
+{
+    auto cosine = hit.normal.dot(scttered.dir.normalized());
+    return cosine<0?0:cosine/pi;
 }
 
 void Lambertian::setAlbedo(shared_ptr<Texture> now_albedo) {
@@ -29,10 +39,14 @@ Metal::Metal(Eigen::Vector3f color,float fuzz) :fuzz(fuzz){
 }
 
 bool Metal::scatter(const My_Hit& hit, Ray &scattered,
-                    Eigen::Vector3f &attenuation) const {
+                    ScatterRecord& srec ) const {
     auto reflected = reflect(hit.ray.dir.normalized(),hit.normal);
+
     scattered = Ray(hit.point,reflected+fuzz*random_in_unit_sphere());
-    attenuation = albedo->value(hit.texcoord.x(),hit.texcoord.y(),hit.point);
+    srec.specular_ray = scattered;
+    srec.is_specular = true;
+    srec.pdf_ptr = nullptr;
+    srec.attenuation = albedo->value(hit.texcoord.x(),hit.texcoord.y(),hit.point);
     return scattered.dir.dot(hit.normal)>0.0f;
 }
 
@@ -40,11 +54,21 @@ void Metal::setAlbedo(shared_ptr<Texture> now_albedo) {
     albedo = now_albedo;
 }
 
+double Metal::scattering_pdf(
+        const My_Hit& hit,const Ray& scttered
+)const
+{
+    auto cosine = hit.normal.dot(scttered.dir.normalized());
+    return cosine < 0 ? 0 : cosine/pi;
+}
+
 bool Dielectric::scatter(const My_Hit& hit, Ray &scattered,
-                         Eigen::Vector3f &attenuation) const {
+                         ScatterRecord& srec ) const{
 
+    srec.is_specular = true;
+    srec.pdf_ptr = nullptr;
 
-    attenuation = Eigen::Vector3f(1,1,1);
+    srec.attenuation = Eigen::Vector3f(1,1,1);
     auto front = hit.ray.dir.dot(hit.normal)<=0.0;
 
 
@@ -72,6 +96,7 @@ bool Dielectric::scatter(const My_Hit& hit, Ray &scattered,
     }
 
     scattered = Ray(hit.point, direction);
+    srec.specular_ray = scattered;
 
     return true;
 }
@@ -89,12 +114,12 @@ Diffuse_light::Diffuse_light(Eigen::Vector3f color){
     this->color = make_shared<SolidColor>(color);
 }
 
-Eigen::Vector3f Diffuse_light::emitted(double u, double v, const Eigen::Vector3f &p) const {
+Eigen::Vector3f Diffuse_light::emitted(const My_Hit hit,double u,double v,const Eigen::Vector3f& p)const {
     return color->value(u,v,p);
 }
 
 bool Diffuse_light::scatter(const My_Hit& hit, Ray &scattered,
-             Eigen::Vector3f &attenuation) const{
+                            ScatterRecord& srec )  const{
     return false;
 
 }
@@ -104,3 +129,12 @@ void Diffuse_light::setAlbedo(shared_ptr<Texture> now_albedo) {
 }
 
 Diffuse_light::Diffuse_light(shared_ptr<Texture> color) :color(color){}
+
+bool Material::scatter(const My_Hit& hit, Ray &scattered,
+                       ScatterRecord& srec ) const {
+    return false;
+}
+
+double Material::scattering_pdf(const My_Hit &hit, const Ray &scttered) const {
+    return 0;
+}

@@ -12,14 +12,27 @@
 
 #include <string>
 
+class Pdf;
+
+struct ScatterRecord {
+    Ray specular_ray;
+    bool is_specular;
+    Color attenuation;
+    shared_ptr<Pdf> pdf_ptr;
+};
+
 class Material {
 public:
     virtual bool scatter(const My_Hit& hit, Ray &scattered,
-                         Eigen::Vector3f &attenuation) const = 0;
+                         ScatterRecord& srec ) const;
 
-    virtual Eigen::Vector3f emitted(double u,double v,const Eigen::Vector3f& p)const{
+    virtual Eigen::Vector3f emitted(const My_Hit hit,double u,double v,const Eigen::Vector3f& p)const{
         return {0,0,0};
     }
+
+    virtual double scattering_pdf(
+            const My_Hit& hit,const Ray& scttered
+            )const;
 
     virtual void setAlbedo(shared_ptr<Texture>)
     {
@@ -36,9 +49,12 @@ public:
     Lambertian()=default;
 
     bool scatter(const My_Hit& hit, Ray &scattered,
-                 Eigen::Vector3f &attenuation) const override;
+                 ScatterRecord& srec) const override;
     void setAlbedo(shared_ptr<Texture> now_albedo)override;
 
+    double scattering_pdf(
+            const My_Hit& hit,const Ray& scttered
+    )const override;
 
 public:
     shared_ptr<Texture> albedo;
@@ -56,8 +72,12 @@ public:
     Metal(Eigen::Vector3f color, float fuzz);
 
     bool scatter(const My_Hit& hit, Ray &scattered,
-                 Eigen::Vector3f &attenuation) const override;
+                 ScatterRecord& srec ) const override;
     void setAlbedo(shared_ptr<Texture> now_albedo)override;
+    double scattering_pdf(
+            const My_Hit& hit,const Ray& scttered
+    )const override;
+
 };
 
 REGISTER_MATERIAL(Metal,"metal");
@@ -70,7 +90,7 @@ public:
     Dielectric(float index_of_refraction);
 
     bool scatter(const My_Hit& hit, Ray &scattered,
-                 Eigen::Vector3f &attenuation) const override;
+                 ScatterRecord& srec ) const override;
 
 
 private:
@@ -88,8 +108,8 @@ public:
     Diffuse_light(Eigen::Vector3f color);
     Diffuse_light(shared_ptr<Texture> color);
     bool scatter(const My_Hit& hit, Ray &scattered,
-                 Eigen::Vector3f &attenuation) const override;
-    Eigen::Vector3f emitted(double u,double v,const Eigen::Vector3f& p)const override;
+                 ScatterRecord& srec ) const override;
+    Eigen::Vector3f emitted(const My_Hit hit,double u,double v,const Eigen::Vector3f& p)const override;
 
     void setAlbedo(shared_ptr<Texture> now_albedo)override;
 };

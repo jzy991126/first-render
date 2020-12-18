@@ -15,6 +15,7 @@
 #include "texture.h"
 #include "firstrender.h"
 #include "material_factory.h"
+#include "pdf.h"
 
 using namespace std;
 
@@ -29,15 +30,25 @@ Eigen::Vector3f CastRay(const Ray &ray, const Scene &scene) {
 
     if (hit.isHit) {
         Ray scattered;
-        Eigen::Vector3f attenuation;
-        auto emited = hit.material->emitted(hit.u, hit.v, hit.point);
+        auto emited = hit.material->emitted(hit,hit.u, hit.v, hit.point);
+
+        double pdf;
+        ScatterRecord srec;
+
         Eigen::Vector3f ref(0, 0, 0);
-        if (random_float() < russian && hit.material->scatter(hit, scattered, attenuation)) {
-            ref = attenuation.cwiseProduct(CastRay(scattered, scene)) / russian;
+        if (random_float() < russian && hit.material->scatter(hit, scattered, srec)) {
+
+            if(srec.is_specular){
+                return srec.attenuation.cwiseProduct(CastRay(scattered, scene)) / russian;
+            }
+
+            scattered = Ray(hit.point,srec.pdf_ptr->generate());
+            pdf = srec.pdf_ptr->value(scattered.dir);
+            ref = srec.attenuation.cwiseProduct(CastRay(scattered, scene))*hit.material->scattering_pdf(hit,scattered) / russian / pdf;
         }
         return ref + emited;
     }
-    return {.0, .0, .0};
+    return {.7, .0, .0};
     //auto unit_direction = ray.dir.normalized();
     //auto t = 0.5*(unit_direction.y() + 1.0);
     //return (1.0-t)*Eigen::Vector3f(1.0, 1.0, 1.0) + t*Eigen::Vector3f(0.5, 0.7, 1.0);
@@ -47,70 +58,50 @@ Eigen::Vector3f CastRay(const Ray &ray, const Scene &scene) {
 int main() {
 
     const float aspect_ratio = 1.0;
-    const int image_width = 800;
+    const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int sample_per_pixel = 3000;
+    const int sample_per_pixel = 300;
 
-    Eigen::Vector3f lookfrom(3, 3, -5);
-    Eigen::Vector3f lookat(3, 3, 0);
+    Eigen::Vector3f lookfrom(0, 0, 20);
+    Eigen::Vector3f lookat(0, 0, 0);
     vec3 vup(0, -1, 0);
     auto dist_to_focus = (lookfrom - lookat).norm();
-    auto aperture = 0.01;
+    auto aperture = 0;
 
     bounce = 0;
 
 
     PPM ppm("test", image_width, image_height);
-    string dragon_path("C:/Users/jzy99/Desktop/fbx/dragon.fbx");
-    string ball_path("C:/Users/jzy99/Desktop/ball.fbx");
-    string bunny_path("C:/Users/jzy99/Desktop/test2.fbx");
+
 
 
     Camera camera(lookfrom, lookat, vup, 70, aspect_ratio, aperture, dist_to_focus);
     Scene scene;
 
-
     auto white_texture = make_shared<SolidColor>(1, 1, 1);
-    auto red_texture = make_shared<SolidColor>(.65,.05,.05);
-    auto green_texture = make_shared<SolidColor>(.12,.45,.15);
+    auto red_texture = make_shared<SolidColor>(.65, .05, .05);
+    auto green_texture = make_shared<SolidColor>(.12, .45, .15);
 
     auto white_mate = make_shared<Lambertian>(white_texture);
     auto green_mate = make_shared<Lambertian>(green_texture);
     auto red_mate = make_shared<Lambertian>(red_texture);
+    auto dia_mate = make_shared<Dielectric>(1.5);
+    auto metal_mate = make_shared<Metal>(Color(0.8, 0.85, 0.88), 0.0);
 
-    auto light_mate = make_shared<Diffuse_light>(Vec3(15,15,15));
+    auto light_mate = make_shared<Diffuse_light>(Vec3(15, 15, 15));
 
-    string cornell_dir("C:/Users/jzy99/Desktop/cornellbox/");
 
-    Model left_model(cornell_dir + "left.obj"), right_model(cornell_dir + "right.obj"), floor_model(
-            cornell_dir + "floor.obj"), light_model(cornell_dir+"light.obj"), shortbox_model(cornell_dir+ "shortbox.obj"), tallbox_model(
-            cornell_dir+"tallbox.obj");
-    Object left(left_model, green_mate), right(right_model, red_mate), floor(floor_model, white_mate), light(
-            light_model, light_mate), shortbox(shortbox_model, white_mate), tallbox(tallbox_model, white_mate);
+    string dragon_path("C:/Users/jzy99/Desktop/ajax.obj");
 
-    Vec3 scale(0.01,0.01,0.01);
+    Model dragon_model(dragon_path);
 
-    left.scale(scale);
-    left.update();
-    right.scale(scale);
-    right.update();
-    floor.scale(scale);
-    floor.update();
-    light.scale(scale);
-    light.update();
-    shortbox.scale(scale);
-    shortbox.update();
-    tallbox.scale(scale);
-    tallbox.update();
 
-    scene.addObject(left);
-    scene.addObject(right);
-    scene.addObject(floor);
-    scene.addObject(light);
-    scene.addObject(shortbox);
-    scene.addObject(tallbox);
+    Object dragon(dragon_model,green_mate);
+
+    scene.addObject(dragon);
     scene.endAdd();
 
+   
 
 
     auto start = std::chrono::system_clock::now();
@@ -150,6 +141,61 @@ int main() {
 
 
 }
+
+
+//cornell
+//
+//Eigen::Vector3f lookfrom(3, 3, -5);
+//Eigen::Vector3f lookat(3, 3, 0);
+//vec3 vup(0, -1, 0);
+
+//string dragon_path("C:/Users/jzy99/Desktop/fbx/dragon.fbx");
+//string ball_path("C:/Users/jzy99/Desktop/ball.fbx");
+//string bunny_path("C:/Users/jzy99/Desktop/test2.fbx");
+//
+//auto white_texture = make_shared<SolidColor>(1, 1, 1);
+//auto red_texture = make_shared<SolidColor>(.65, .05, .05);
+//auto green_texture = make_shared<SolidColor>(.12, .45, .15);
+//
+//auto white_mate = make_shared<Lambertian>(white_texture);
+//auto green_mate = make_shared<Lambertian>(green_texture);
+//auto red_mate = make_shared<Lambertian>(red_texture);
+//auto dia_mate = make_shared<Dielectric>(1.5);
+//auto metal_mate = make_shared<Metal>(Color(0.8, 0.85, 0.88), 0.0);
+//
+//auto light_mate = make_shared<Diffuse_light>(Vec3(15, 15, 15));
+//
+//string cornell_dir("C:/Users/jzy99/Desktop/cornellbox/");
+//
+//Model left_model(cornell_dir + "left.obj"), right_model(cornell_dir + "right.obj"), floor_model(
+//    cornell_dir + "floor.obj"), light_model(cornell_dir + "light.obj"), shortbox_model(cornell_dir + "shortbox.obj"), tallbox_model(
+//        cornell_dir + "tallbox.obj");
+//Object left(left_model, green_mate), right(right_model, red_mate), floor(floor_model, white_mate), light(
+//    light_model, light_mate), shortbox(shortbox_model, white_mate), tallbox(tallbox_model, dia_mate);
+//
+//Vec3 scale(0.01, 0.01, 0.01);
+//
+//left.scale(scale);
+//left.update();
+//right.scale(scale);
+//right.update();
+//floor.scale(scale);
+//floor.update();
+//light.scale(scale);
+//light.update();
+//shortbox.scale(scale);
+//shortbox.update();
+//tallbox.scale(scale);
+//tallbox.update();
+//
+//scene.addObject(left);
+//scene.addObject(right);
+//scene.addObject(floor);
+//scene.addObject(light);
+//scene.addObject(shortbox);
+//scene.addObject(tallbox);
+//scene.endAdd();
+
 
 //	auto checker_texture = make_shared<CheckerTexture>(Color(0.2, 0.3, 0.1), Color(0.9, 0.9, 0.9));
 //	auto erth_texture = make_shared<ImageTexture>("C:/Users/jzy99/Desktop/earthmap.jpg");
@@ -212,3 +258,6 @@ int main() {
 ////    scene.addObject(bunny);
 ////	scene.addObject(light);
 //	scene.endAdd();
+
+
+

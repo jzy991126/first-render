@@ -30,3 +30,5 @@ Eigen::Vector3f refract(const Eigen::Vector3f &uv, const Eigen::Vector3f &n, dou
 double degree2radians(double deg);
 
 Eigen::Vector3f random_in_unit_disk();
+
+Eigen::Vector3f random_cosine_direction();
